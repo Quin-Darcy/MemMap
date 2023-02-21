@@ -1,32 +1,30 @@
 #include "portable_resources.h"
 
 class MemMap {
-	private:
-		int open_file_descriptors;
-		HANDLE open_handles[2];
+private:
+	int open_file_descriptors;
+	HANDLE open_handles[2];
 
-	public:
-		LPCSTR 	source_file_name; 
-		LPVOID  base_address;
+public:
+	LPCSTR 	source_file_name;
+	LPVOID  base_address;
 
-		MemMap() {};
-		MemMap(LPCSTR _file_name);
-		~MemMap();
+	MemMap() {};
+	MemMap(LPCSTR _file_name);
+	~MemMap();
 
-		void MapToMem();
-		void MapToMem_Win32();
-
-
+	void MapToMem();
+	void MapToMem_Win32();
 };
 
 MemMap::MemMap(LPCSTR _file_name) {
 	source_file_name = _file_name;
 
-	#if defined(_WIN32)
-		MapToMem_Win32();
-	#else
-		MapToMem();
-	#endif
+#if defined(_WIN32)
+	MapToMem_Win32();
+#else
+	MapToMem();
+#endif
 }
 
 void MemMap::MapToMem() {
@@ -38,7 +36,7 @@ void MemMap::MapToMem() {
 		perror("Couldn't get file size with fstat()\n");
 		return;
 	}
-	else 
+	else
 	{
 		open_file_descriptors = file_descriptor;
 	}
@@ -53,7 +51,7 @@ void MemMap::MapToMem_Win32() {
 	HANDLE file_mapping;
 
 	open_file = CreateFileA(source_file_name, GENERIC_READ, FILE_SHARE_READ, NULL,
-							OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+		OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 
 	if (open_file == INVALID_HANDLE_VALUE) {
 		printf("Could not open file with CreateFile()\n");
@@ -70,7 +68,7 @@ void MemMap::MapToMem_Win32() {
 		printf("Could not create file mapping with CreateFileA()\n");
 		return;
 	}
-	else 
+	else
 	{
 		open_handles[1] = file_mapping;
 	}
@@ -88,12 +86,12 @@ void MemMap::MapToMem_Win32() {
 }
 
 MemMap::~MemMap() {
-	#if defined(_WIN32)
-		CloseHandle(open_handles[1]);
-		CloseHandle(open_handles[0]);
-	#else
-		close(open_file_descriptor);
-	#endif
+#if defined(_WIN32)
+	CloseHandle(open_handles[1]);
+	CloseHandle(open_handles[0]);
+#else
+	close(open_file_descriptor);
+#endif
 }
 
 
@@ -102,7 +100,7 @@ int main(int argc, char* argv[])
 	LPCSTR lpSourceFile = "./portable_resources.h";
 	MemMap mapped_file(lpSourceFile);
 
-	printf("Base Address: 0x%x\n\n", mapped_file.base_address);
+	printf("Base Address: 0x%x\n\n", (unsigned int)mapped_file.base_address);
 
 	return 0;
 }
