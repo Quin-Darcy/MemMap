@@ -1,9 +1,9 @@
 #ifndef _WINDEFS_
 #define _WINDEFS_
 
-typedef unsigned long	  DWORD;
-typedef int 			      BOOL;
-typedef unsigned char  	BYTE;
+typedef unsigned long   DWORD;
+typedef int             BOOL;
+typedef unsigned char   BYTE;
 typedef unsigned short  WORD;
 typedef float    		    FLOAT;
 typedef FLOAT   		    *PFLOAT;
