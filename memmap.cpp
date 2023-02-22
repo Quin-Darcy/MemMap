@@ -8,7 +8,7 @@ struct stat {
 
 class MemMap {
 private:
-	int open_file_descriptors;
+	int open_file_descriptor;
 	HANDLE open_handles[2];
 
 public:
@@ -45,7 +45,7 @@ void MemMap::MapToMem() {
 	}
 	else
 	{
-		open_file_descriptors = file_descriptor;
+		open_file_descriptor = file_descriptor;
 	}
 	printf("File opened with file descriptor: %d\n", file_descriptor);
 	off_t file_size = stat_buffer.st_size;
@@ -107,12 +107,12 @@ void MemMap::MapToMem_Win32() {
 }
 
 MemMap::~MemMap() {
-#if defined(_WIN32)
-	CloseHandle(open_handles[1]);
-	CloseHandle(open_handles[0]);
-#else
-	close(open_file_descriptor);
-#endif
+	#if defined(_WIN32)
+		CloseHandle(open_handles[1]);
+		CloseHandle(open_handles[0]);
+	#else
+		close(open_file_descriptor);
+	#endif
 }
 
 
