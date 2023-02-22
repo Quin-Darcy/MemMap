@@ -1,5 +1,11 @@
 #include "portable_resources.h"
 
+#if defined(_WIN32)
+struct stat {
+	off_t st_size = 0;
+};
+#endif
+
 class MemMap {
 private:
 	int open_file_descriptors;
@@ -28,6 +34,7 @@ MemMap::MemMap(LPCSTR _file_name) {
 }
 
 void MemMap::MapToMem() {
+	printf("Openeing file: %s\n", source_file_name);
 	int file_descriptor = open(source_file_name, O_RDONLY, S_IRUSR | S_IWUSR);
 	struct stat stat_buffer;
 
@@ -40,9 +47,18 @@ void MemMap::MapToMem() {
 	{
 		open_file_descriptors = file_descriptor;
 	}
+	printf("File opened with file descriptor: %d\n", file_descriptor);
 	off_t file_size = stat_buffer.st_size;
 
+	printf("Mapping open file into memory...\n");
 	base_address = mmap(NULL, file_size, PROT_READ, MAP_PRIVATE, file_descriptor, 0);
+
+	if (base_address == MAP_FAILED) 
+	{
+		perror("Failed to map open file with mmap()\n");
+		return;
+	}
+
 	return;
 }
 
@@ -50,6 +66,7 @@ void MemMap::MapToMem_Win32() {
 	HANDLE open_file;
 	HANDLE file_mapping;
 
+	printf("Creating file: %s\n", source_file_name);
 	open_file = CreateFileA(source_file_name, GENERIC_READ, FILE_SHARE_READ, NULL,
 		OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 
@@ -60,7 +77,9 @@ void MemMap::MapToMem_Win32() {
 	else {
 		open_handles[0] = open_file;
 	}
+	printf("File created with handle: %d\n", open_file);
 
+	printf("Creating file mapping ...\n");
 	file_mapping = CreateFileMappingA(open_file, NULL, PAGE_READONLY, 0, 0, NULL);
 	if (file_mapping == NULL)
 	{
@@ -72,7 +91,9 @@ void MemMap::MapToMem_Win32() {
 	{
 		open_handles[1] = file_mapping;
 	}
+	printf("Mapping created with handle: %d\n", file_mapping);
 
+	printf("Mapping view of file ...\n");
 	base_address = MapViewOfFile(file_mapping, FILE_MAP_READ, 0, 0, 0);
 	if (base_address == NULL)
 	{
@@ -97,10 +118,21 @@ MemMap::~MemMap() {
 
 int main(int argc, char* argv[])
 {
-	LPCSTR lpSourceFile = "./portable_resources.h";
-	MemMap mapped_file(lpSourceFile);
+	LPCSTR source_file_name;
 
-	printf("Base Address: 0x%x\n\n", (unsigned int)mapped_file.base_address);
+	if (argc == 2)
+	{
+		source_file_name = argv[1];
+	}
+	else 
+	{
+		printf("[USAGE] .\\memmap <source_file_path>\n");
+		return -1;
+	}
+
+	MemMap mapped_file(source_file_name);
+
+	printf("Base Address: 0x%x\n\n", mapped_file.base_address);
 
 	return 0;
 }
