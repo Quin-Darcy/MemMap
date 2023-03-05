@@ -1,4 +1,5 @@
-#include "portable_resources.h"
+#include "../../includes/defs/portable_resources.h"
+#include "../../includes/memmap/memmap.h"
 
 #if defined(_WIN32)
 struct stat {
@@ -6,31 +7,14 @@ struct stat {
 };
 #endif
 
-class MemMap {
-private:
-	int open_file_descriptor;
-	HANDLE open_handles[2];
-
-public:
-	LPCSTR 	source_file_name;
-	LPVOID  base_address;
-
-	MemMap() {};
-	MemMap(LPCSTR _file_name);
-	~MemMap();
-
-	void MapToMem();
-	void MapToMem_Win32();
-};
-
 MemMap::MemMap(LPCSTR _file_name) {
 	source_file_name = _file_name;
 
-#if defined(_WIN32)
-	MapToMem_Win32();
-#else
-	MapToMem();
-#endif
+	#if defined(_WIN32)
+		MapToMem_Win32();
+	#else
+		MapToMem();
+	#endif
 }
 
 void MemMap::MapToMem() {
@@ -108,32 +92,11 @@ void MemMap::MapToMem_Win32() {
 
 MemMap::~MemMap() {
 	#if defined(_WIN32)
+		printf("Closing open handles ...\n");
 		CloseHandle(open_handles[1]);
 		CloseHandle(open_handles[0]);
 	#else
+		printf("Closing open file descriptors ...\n");
 		close(open_file_descriptor);
 	#endif
 }
-
-
-int main(int argc, char* argv[])
-{
-	LPCSTR source_file_name;
-
-	if (argc == 2)
-	{
-		source_file_name = argv[1];
-	}
-	else 
-	{
-		printf("[USAGE] .\\memmap <source_file_path>\n");
-		return -1;
-	}
-
-	MemMap mapped_file(source_file_name);
-
-	printf("Base Address: 0x%x\n\n", mapped_file.base_address);
-
-	return 0;
-}
-
